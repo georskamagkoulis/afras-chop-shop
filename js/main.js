@@ -51,7 +51,7 @@
   if (box && video && toggle && src) {
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var saveData = !!(navigator.connection && navigator.connection.saveData);
-    var canAuto = !reduce && !saveData;
+    var canAuto = !saveData;
     var userPaused = false;
     var onScreen = true;
 
