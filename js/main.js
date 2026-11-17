@@ -88,6 +88,10 @@
       }
     });
 
+     if (canAuto) {
+      play();
+    }
+
     if ('IntersectionObserver' in window) {
       new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
