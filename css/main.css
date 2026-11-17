@@ -1162,3 +1162,31 @@ main:focus { outline: none; }
     background: var(--stripe-b);
   }
 }
+@media (hover: hover) and (pointer: fine) {
+ html.has-clipper { cursor: none; }
+ html.has-clipper a,
+ html.has-clipper button { cursor: pointer; }
+
+ #clipper.is-hidden { opacity: 0; }
+  #clipper {
+    position: fixed;
+    top: 0; left: 0;
+    width: 36px; height: auto;
+    pointer-events: none;      /* na min kalyptei ta clicks */
+    z-index: 9999;
+    opacity: 0;
+    transform-origin: 50% 0;   /* peristrefetai gyro apo to akro ths lamas */
+    transition: opacity .2s;
+  }
+  #clipper.is-visible { opacity: 1; }
+  #clipper.is-buzzing { animation: buzz .07s infinite; }
+
+  @keyframes buzz {
+    0%   { margin: 0 0; }
+    50%  { margin: 1px -1px; }
+    100% { margin: -1px 1px; }
+  }
+}
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  #clipper { display: none; }
+}
