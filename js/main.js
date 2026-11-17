@@ -113,13 +113,13 @@
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reduced  = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!clipper || !canHover) return;
-  document.documentElement.classList.add('has-clipper');
-
+ 
   document.addEventListener('mousemove', (e) => {
-    clipper.style.transform =
-      `translate(${e.clientX - 18}px, ${e.clientY}px) rotate(20deg)`;
-    clipper.classList.add('is-visible');
-  });
+ document.documentElement.classList.add('has-clipper');
+  clipper.style.transform =
+    `translate(${e.clientX - 18}px, ${e.clientY}px) rotate(20deg)`;
+  clipper.classList.add('is-visible');
+});
 
   document.addEventListener('mouseover', (e) => {
     clipper.classList.toggle('is-hidden', !!e.target.closest('a, button'));
