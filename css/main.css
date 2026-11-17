@@ -1167,7 +1167,7 @@ main:focus { outline: none; }
  html.has-clipper a,
  html.has-clipper button { cursor: pointer; }
 
- #clipper.is-hidden { opacity: 0; }
+
   #clipper {
     position: fixed;
     top: 0; left: 0;
@@ -1179,6 +1179,7 @@ main:focus { outline: none; }
     transition: opacity .2s;
   }
   #clipper.is-visible { opacity: 1; }
+  #clipper.is-hidden  { opacity: 0; } 
   #clipper.is-buzzing { animation: buzz .07s infinite; }
 
   @keyframes buzz {
