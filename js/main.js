@@ -130,3 +130,4 @@
   document.addEventListener('mousedown',  () => clipper.classList.add('is-buzzing'));
   document.addEventListener('mouseup',    () => clipper.classList.remove('is-buzzing'));
 })();
+})();
