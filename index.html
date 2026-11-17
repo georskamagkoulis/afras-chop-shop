@@ -20,6 +20,7 @@
   <!-- TODO: og:url (final domain), og:image (1200x630 share image) + og:image:alt "Το λογότυπο του Afra's Chop Shop με το σύνθημα Stay Fresh" -->
   <meta name="twitter:card" content="summary_large_image">
 
+  <link rel="preload" href="assets/video/hero-poster.webp" as="image" type="image/webp" fetchpriority="high">
   <link rel="preload" href="assets/fonts/manrope-greek-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/fira-sans-extra-condensed-greek-800-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/fira-sans-extra-condensed-latin-800-normal.woff2" as="font" type="font/woff2" crossorigin>
@@ -106,7 +107,19 @@
   <main id="main" tabindex="-1">
 
     <!-- 1. Hero: the frame -->
-    <section class="hero">
+    <section class="hero theme-ink">
+      <!-- v4 hero video: poster is the LCP image; video src is set by JS after window load (autoplay allowed only) -->
+      <div class="hero__bg" data-video-wrap data-video data-state="poster">
+        <picture class="hero__poster">
+          <source srcset="assets/video/hero-poster.webp" type="image/webp">
+          <img src="assets/video/hero-poster.jpg" width="1280" height="720" alt="" fetchpriority="high" decoding="async">
+        </picture>
+        <video class="hero__video" width="1280" height="720" muted loop playsinline preload="none" aria-hidden="true" data-src="assets/video/hero.mp4"></video>
+        <button class="video__toggle" type="button" aria-label="Αναπαραγωγή βίντεο" data-label-play="Αναπαραγωγή βίντεο" data-label-pause="Παύση βίντεο" hidden>
+          <svg class="icon video__icon-play" aria-hidden="true"><use href="#i-play"/></svg>
+          <svg class="icon video__icon-pause" aria-hidden="true"><use href="#i-pause"/></svg>
+        </button>
+      </div>
       <div class="wrap hero__grid">
         <div class="frame hero__frame">
           <div class="pole" aria-hidden="true">
@@ -191,26 +204,6 @@
           <p class="intro">Το Afra's Chop Shop είναι το κουρείο του Σάββα Αφράτογλου στη Νέα Μαγνησία. Το «Stay Fresh» στην ταμπέλα είναι δική του φράση.</p>
         </div>
         <div class="split__body">
-          <!-- Promo video (design-system.md 8.3 v2). 960x540 landscape, grayscale, muted, cropped to remove Instagram UI. Source: source-media/ (not deployed). -->
-          <figure class="video-block" data-video-wrap>
-          <div class="video video--landscape" data-video data-state="poster">
-            <p class="label video__notch">Μαγαζί</p>
-            <div class="video__media">
-              <picture class="video__poster">
-                <source srcset="assets/video/promo-poster.webp" type="image/webp">
-                <img src="assets/video/promo-poster.jpg" width="960" height="540" alt="" loading="lazy" decoding="async">
-              </picture>
-              <video class="video__el" width="960" height="540" preload="none" muted playsinline loop data-src="assets/video/promo.mp4" aria-label="Σύντομο βίντεο χωρίς ήχο από το εσωτερικό του Afra's Chop Shop.">
-                Το βίντεο δεν παίζει εδώ. <a href="https://www.instagram.com/afraschopshop_barbers" target="_blank" rel="noopener">Περισσότερα στο Instagram μας.<span class="visually-hidden"> (ανοίγει σε νέα καρτέλα)</span></a>
-              </video>
-              <button class="video__toggle" type="button" aria-label="Αναπαραγωγή βίντεο" data-label-play="Αναπαραγωγή βίντεο" data-label-pause="Παύση βίντεο" hidden>
-                <svg class="icon video__icon-play" aria-hidden="true"><use href="#i-play"/></svg>
-                <svg class="icon video__icon-pause" aria-hidden="true"><use href="#i-pause"/></svg>
-              </button>
-            </div>
-          </div>
-          <figcaption class="video__caption">Μια ματιά μέσα στο μαγαζί.</figcaption>
-          </figure>
           <ul role="list" class="sheet">
             <li class="shot shot--span">
               <img class="photo photo--wide photo--span" src="assets/img/gallery/cut-01.jpg" width="477" height="232" loading="lazy" decoding="async" alt="Προφίλ άντρα με χαμηλό skin fade γύρω από το αυτί, κοντά μαλλιά πάνω, μουστάκι και γενάκι στο πηγούνι">

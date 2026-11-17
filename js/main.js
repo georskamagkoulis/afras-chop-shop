@@ -41,79 +41,67 @@
     Array.prototype.forEach.call(targets, function (t) { io.observe(t); });
   }
 
-  /* 3. Promo video. No src in the HTML. Autoplay (muted) only without reduced motion and Save-Data;
-        otherwise poster + play button. The toggle is always visible; a user pause is never auto-resumed.
-        Skipped while the block is still `hidden` (assets not encoded yet). */
-  var wrap = document.querySelector('[data-video-wrap]');
-  var box = wrap && !wrap.hidden ? wrap.querySelector('[data-video]') : null;
-  if (box) {
-    var video = box.querySelector('video');
-    var toggle = box.querySelector('.video__toggle');
-    var src = video && video.getAttribute('data-src');
-    if (video && toggle && src) {
-      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      var saveData = !!(navigator.connection && navigator.connection.saveData);
-      var canAuto = !reduce && !saveData && 'IntersectionObserver' in window;
-      var userPaused = false;
+  /* 3. Hero video (v4). No src in the HTML; the poster is the LCP image. Autoplay (muted) only without
+        reduced motion and Save-Data, with src set after window load. Otherwise poster + play toggle.
+        A user pause is never auto-resumed; the video pauses while the hero is off-screen. */
+  var box = document.querySelector('[data-video]');
+  var video = box && box.querySelector('video');
+  var toggle = box && box.querySelector('.video__toggle');
+  var src = video && video.getAttribute('data-src');
+  if (box && video && toggle && src) {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var saveData = !!(navigator.connection && navigator.connection.saveData);
+    var canAuto = !reduce && !saveData;
+    var userPaused = false;
+    var onScreen = true;
 
-      var setState = function (state) {
-        box.setAttribute('data-state', state);
-        toggle.setAttribute('aria-label', toggle.getAttribute(state === 'playing' ? 'data-label-pause' : 'data-label-play'));
-      };
-      var load = function () {
-        if (!video.getAttribute('src')) video.setAttribute('src', src);
-      };
-      var play = function () {
-        load();
-        video.muted = true;
-        var p = video.play();
-        if (p && typeof p.catch === 'function') {
-          p.catch(function () {
-            canAuto = false;
-            if (video.paused) setState('poster');
-          });
-        }
-      };
-
-      video.addEventListener('playing', function () { setState('playing'); });
-      video.addEventListener('pause', function () {
-        if (box.getAttribute('data-state') === 'playing') setState('paused');
-      });
-
-      toggle.hidden = false;
-      setState('poster');
-      toggle.addEventListener('click', function () {
-        if (!video.paused) {
-          userPaused = true;
-          video.pause();
-        } else {
-          userPaused = false;
-          play();
-        }
-      });
-
-      if (canAuto) {
-        /* Lazy src: only once the frame is within 200px of the viewport. */
-        var near = new IntersectionObserver(function (entries) {
-          if (entries.some(function (e) { return e.isIntersecting; })) {
-            load();
-            near.disconnect();
-          }
-        }, { rootMargin: '200px' });
-        near.observe(box);
-
-        /* Play at 50% visible, pause when it leaves. */
-        var seen = new IntersectionObserver(function (entries) {
-          entries.forEach(function (e) {
-            if (e.intersectionRatio >= 0.5) {
-              if (canAuto && !userPaused && video.paused) play();
-            } else if (!e.isIntersecting && !video.paused) {
-              video.pause();
-            }
-          });
-        }, { threshold: [0, 0.5] });
-        seen.observe(box);
+    var setState = function (state) {
+      box.setAttribute('data-state', state);
+      toggle.setAttribute('aria-label', toggle.getAttribute(state === 'playing' ? 'data-label-pause' : 'data-label-play'));
+    };
+    var play = function () {
+      if (!video.getAttribute('src')) video.setAttribute('src', src);
+      video.muted = true;
+      var p = video.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(function () {
+          canAuto = false;
+          if (video.paused) setState('poster');
+        });
       }
+    };
+
+    video.addEventListener('playing', function () { setState('playing'); });
+    video.addEventListener('pause', function () {
+      if (box.getAttribute('data-state') === 'playing') setState('paused');
+    });
+
+    toggle.hidden = false;
+    setState('poster');
+    toggle.addEventListener('click', function () {
+      if (!video.paused) {
+        userPaused = true;
+        video.pause();
+      } else {
+        userPaused = false;
+        play();
+      }
+    });
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          onScreen = e.isIntersecting;
+          if (!onScreen && !video.paused) video.pause();
+          else if (onScreen && canAuto && !userPaused && video.paused && video.getAttribute('src')) play();
+        });
+      }).observe(box);
+    }
+
+    if (canAuto) {
+      var start = function () { if (onScreen && !userPaused) play(); };
+      if (document.readyState === 'complete') start();
+      else window.addEventListener('load', start);
     }
   }
 

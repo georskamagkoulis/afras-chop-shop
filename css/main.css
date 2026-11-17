@@ -488,7 +488,7 @@ main:focus { outline: none; }
 .shot__no {
   display: block;
   margin-top: var(--space-2);
-  color: var(--muted);
+  color: var(--fg-muted);
 }
 
 /* Logo raster: multiply on paper, inverted + screen on ink */
@@ -800,71 +800,62 @@ main:focus { outline: none; }
   line-height: var(--lh-tight);
 }
 
-/* 3b. Promo video (v2): framed, notched, grayscale baked into the file, never full bleed */
-.video-block {
-  margin: var(--space-8) 0 var(--space-6);
-}
-.video__caption {
-  max-width: calc(40rem + 2 * var(--space-3) + 2 * var(--frame-w));
-  margin-top: var(--space-3);
-  color: var(--muted);
-  font-size: var(--step-0);
-}
-.video-block:has(.video--portrait) .video__caption { max-width: calc(22.5rem + 2 * var(--space-3) + 2 * var(--frame-w)); }
-.video {
-  --video-max: 40rem;                 /* landscape: 640px display max */
+/* 1b. v4 hero video: full-bleed poster + video under a flat ink overlay (0.62, never below 0.58) */
+.hero.theme-ink {
   position: relative;
-  width: 100%;
-  max-width: calc(var(--video-max) + 2 * var(--space-3) + 2 * var(--frame-w));
-  margin: 0;
-  padding: var(--space-3);
-  border: var(--frame);
-  border-radius: var(--radius);
-}
-.video--portrait {
-  --video-max: 22.5rem;               /* portrait: 360px display max */
-  width: min(100%, 18rem + 2 * var(--space-3) + 2 * var(--frame-w));
-}
-.video__notch {
-  position: absolute;
-  top: 0;
-  left: var(--space-6);
-  max-width: calc(100% - 2 * var(--space-6));
-  padding-inline: var(--space-3);
-  background: var(--paper);
-  transform: translateY(-50%);
-}
-.video__media {
-  position: relative;
+  isolation: isolate;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  background: var(--surface);
+  padding-bottom: calc(var(--section-y) + var(--tap) + var(--space-4));   /* room for the toggle above the sticky bar */
 }
-.video--portrait .video__media { aspect-ratio: 4 / 5; }
-.video__poster img,
-.video__el {
+.hero__grid { position: relative; z-index: 1; }
+.hero__bg { position: absolute; inset: 0; }
+.hero__bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgb(14 14 14 / 0.62);
+}
+.hero__poster img,
+.hero__video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  max-width: none;
   object-fit: cover;
-  object-position: center;
+  object-position: center 40%;
 }
-.video--portrait .video__poster img,
-.video--portrait .video__el { object-position: center 40%; }
-.video__el {
+.hero__video {
   opacity: 0;
   transition: opacity var(--dur) var(--ease-out);
 }
-.video[data-state="playing"] .video__el,
-.video[data-state="paused"] .video__el { opacity: 1; }
+.hero__bg[data-state="playing"] .hero__video,
+.hero__bg[data-state="paused"] .hero__video { opacity: 1; }
 
-/* One control, two states: centered play on the poster, 44x44 corner button once started */
+/* Ink hero: paper frame and lines, ink pads cut the frame */
+.theme-ink .frame { border-color: var(--paper); }
+.theme-ink .frame__notch { background: var(--ink); }
+.theme-ink .pole { background: transparent; }
+.theme-ink .pole::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: calc(50% - var(--frame-w) / 2);
+  height: var(--frame-w);
+  background: var(--ink);
+}
+.theme-ink .pole__cap { background: var(--ink); border-color: var(--paper); }
+.theme-ink .pole__body { border-color: var(--paper); }
+.theme-ink .pole__base { background: var(--paper); }
+
+/* One toggle: bottom-right of the hero, clear of the mobile sticky bar */
 .video__toggle {
   position: absolute;
-  z-index: 1;
-  left: var(--space-3);
-  bottom: var(--space-3);
+  z-index: 3;
+  right: var(--space-4);
+  bottom: calc(var(--bar-h) + env(safe-area-inset-bottom, 0px) + var(--space-4));
   display: grid;
   place-items: center;
   width: var(--tap);
@@ -876,23 +867,18 @@ main:focus { outline: none; }
   color: var(--paper);
   cursor: pointer;
 }
-.video[data-state="poster"] .video__toggle {
-  left: 50%;
-  bottom: 50%;
-  transform: translate(-50%, 50%);
-}
 .video__toggle:focus-visible {
   outline: 3px solid var(--paper);
   outline-offset: 2px;
   box-shadow: 0 0 0 7px var(--ink);   /* v3: ink outer ring, not a shadow */
 }
 .video__icon-pause { display: none; }
-.video[data-state="playing"] .video__icon-pause { display: block; }
-.video[data-state="playing"] .video__icon-play { display: none; }
+.hero__bg[data-state="playing"] .video__icon-pause { display: block; }
+.hero__bg[data-state="playing"] .video__icon-play { display: none; }
 
 @media (min-width: 56.25em) {
-  .video-block { margin-top: 0; }
-  .video--portrait { width: min(100%, var(--video-max) + 2 * var(--space-3) + 2 * var(--frame-w)); }
+  .hero.theme-ink { padding-bottom: var(--section-y); }
+  .video__toggle { right: var(--space-6); bottom: var(--space-6); }
 }
 
 /* 4. Rating: the number */
