@@ -117,7 +117,7 @@
   document.addEventListener('mousemove', (e) => {
  document.documentElement.classList.add('has-clipper');
   clipper.style.transform =
-    `translate(${e.clientX - 18}px, ${e.clientY}px) rotate(20deg)`;
+    `translate(${e.clientX - 9}px, ${e.clientY}px) rotate(20deg)`;
   clipper.classList.add('is-visible');
 });
 
