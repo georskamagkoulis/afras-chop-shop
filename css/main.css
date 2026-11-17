@@ -75,17 +75,17 @@
   --measure: 62ch;
 
   /* Colour */
-  --paper: #FAFAF7;
-  --surface: #EFEEE9;
-  --ink: #0E0E0E;
-  --charcoal: #181816;
+  --paper: #F2EDE4;
+  --surface: #241F1A;
+  --ink: #14110F;
+  --charcoal: #1C1814;
   --muted: #5A5A56;
   --hairline: #D6D5CF;
-  --ink-muted: #A3A39D;
-  --ink-hairline: #2B2B29;
-  --accent: #C4241B;
-  --accent-press: #9E1C15;
-  --accent-contrast: #FFFFFF;
+  --ink-muted: #A8A096;
+  --ink-hairline: #2E2822;
+  --accent: #B8955A;
+  --accent-press: #9C7C45;
+  --accent-contrast: #14110F;
 
   /* Contextual roles (overridden per section theme) */
   --bg: var(--paper);
@@ -189,8 +189,8 @@
 .theme-red {
   --bg: var(--accent);
   --fg: var(--accent-contrast);
-  --line: var(--paper);
-  --focus: var(--paper);
+  --line: var(--ink);
+  --focus: var(--ink);
   background: var(--accent);
   color: var(--accent-contrast);
 }
@@ -410,7 +410,7 @@ main:focus { outline: none; }
 /* Inverted book button inside the red band */
 .btn--invert {
   --stripe-a: var(--paper);
-  --stripe-b: var(--surface);
+  --stripe-b: #E2DACB;
   background: var(--paper);
   color: var(--ink);
 }
@@ -816,7 +816,7 @@ main:focus { outline: none; }
   content: "";
   position: absolute;
   inset: 0;
-  background: rgb(14 14 14 / 0.62);
+  background: rgb(20 17 15 / 0.64);
 }
 .hero__poster img,
 .hero__video {
