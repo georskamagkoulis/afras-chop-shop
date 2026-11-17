@@ -108,7 +108,25 @@
       else window.addEventListener('load', start);
     }
   }
+  (() => {
+  const clipper = document.getElementById('clipper');
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const reduced  = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!clipper || !canHover || reduced) return;
 
-  /* 4. Let iOS Safari apply :active on tap (stripe flash on the Book buttons). */
-  document.addEventListener('touchstart', function () {}, { passive: true });
+  document.documentElement.classList.add('has-clipper');
+
+  document.addEventListener('mousemove', (e) => {
+    clipper.style.transform =
+      `translate(${e.clientX - 18}px, ${e.clientY}px) rotate(20deg)`;
+    clipper.classList.add('is-visible');
+  });
+
+  document.addEventListener('mouseover', (e) => {
+    clipper.classList.toggle('is-hidden', !!e.target.closest('a, button'));
+  });
+
+  document.addEventListener('mouseleave', () => clipper.classList.remove('is-visible'));
+  document.addEventListener('mousedown',  () => clipper.classList.add('is-buzzing'));
+  document.addEventListener('mouseup',    () => clipper.classList.remove('is-buzzing'));
 })();
