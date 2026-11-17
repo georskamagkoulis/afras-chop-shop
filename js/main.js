@@ -112,8 +112,7 @@
   const clipper = document.getElementById('clipper');
   const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reduced  = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!clipper || !canHover || reduced) return;
-
+  if (!clipper || !canHover) return;
   document.documentElement.classList.add('has-clipper');
 
   document.addEventListener('mousemove', (e) => {
