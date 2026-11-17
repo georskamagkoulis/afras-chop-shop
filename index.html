@@ -191,10 +191,8 @@
           <p class="intro">Το Afra's Chop Shop είναι το κουρείο του Σάββα Αφράτογλου στη Νέα Μαγνησία. Το «Stay Fresh» στην ταμπέλα είναι δική του φράση.</p>
         </div>
         <div class="split__body">
-          <!-- Promo video (design-system.md 8.3 v2). Kept `hidden` until assets/video/promo.mp4, promo-poster.webp and promo-poster.jpg exist.
-               TODO: encode with ffmpeg (design-system.md 7a), confirm orientation with ffprobe, set width/height + video--landscape/--portrait to match, then remove `hidden`.
-               Orientation below assumes landscape 960x540 (brief metadata: 1920x1080). -->
-          <figure class="video-block" data-video-wrap hidden>
+          <!-- Promo video (design-system.md 8.3 v2). 960x540 landscape, grayscale, muted, cropped to remove Instagram UI. Source: source-media/ (not deployed). -->
+          <figure class="video-block" data-video-wrap>
           <div class="video video--landscape" data-video data-state="poster">
             <p class="label video__notch">Μαγαζί</p>
             <div class="video__media">
