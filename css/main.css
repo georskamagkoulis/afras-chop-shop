@@ -1171,7 +1171,7 @@ main:focus { outline: none; }
   #clipper {
     position: fixed;
     top: 0; left: 0;
-    width: 36px; height: auto;
+    width: 18px; height: auto;
     pointer-events: none;      /* na min kalyptei ta clicks */
     z-index: 9999;
     opacity: 0;
