@@ -1188,6 +1188,6 @@ main:focus { outline: none; }
     100% { margin: -1px 1px; }
   }
 }
-@media (hover: none), (prefers-reduced-motion: reduce) {
+@media (hover: none) {
   #clipper { display: none; }
 }
