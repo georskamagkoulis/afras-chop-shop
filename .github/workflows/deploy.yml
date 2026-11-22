@@ -1,0 +1,63 @@
+# Builds the site with "npm run build" and publishes it to GitHub Pages.
+# Only the public files are published (pages, css, js, assets, robots.txt),
+# so src/, data/ and build.mjs are not reachable on the live site.
+#
+# One-time setup: repo Settings → Pages → Build and deployment → Source: "GitHub Actions".
+
+name: Build and deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:          # on PRs: build only (catches a broken build before merging)
+  workflow_dispatch:     # "Run workflow" button in the Actions tab
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build pages from src/ and data/site.json
+        run: npm run build
+
+      - name: Check the committed pages are up to date
+        run: |
+          if ! git diff --quiet -- '*.html'; then
+            echo "::warning::The committed pages differ from a fresh build. Run 'npm run build' and commit the result."
+            git diff --stat -- '*.html'
+          fi
+
+      - name: Collect the public files
+        run: |
+          mkdir _site
+          cp *.html robots.txt _site/
+          cp -r css js assets _site/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
