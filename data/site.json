@@ -1,0 +1,42 @@
+{
+  "phone": "2231 602268",
+  "phoneCountryCode": "+30",
+
+  "address": {
+    "street": "Στυλίδος 2",
+    "postalCode": "35100",
+    "city": "Λαμία",
+    "area": "Νέα Μαγνησία",
+    "country": "GR"
+  },
+
+  "links": {
+    "booking": "https://afraschopshop.setmore.com/book",
+    "reviews": "https://afraschopshop.setmore.com",
+    "instagram": "https://www.instagram.com/afraschopshop_barbers/",
+    "tiktok": "https://www.tiktok.com/@afras.chop.shop"
+  },
+
+  "rating": {
+    "score": "5.0",
+    "count": 47,
+    "source": "Setmore",
+    "checked": "17/11/2026"
+  },
+
+  "prices": {
+    "haircut": { "name": "Κούρεμα",              "minutes": 30, "price": 9 },
+    "beard":   { "name": "Περιποίηση γενειάδας", "minutes": 15, "price": 5 },
+    "combo":   { "name": "Κούρεμα + γενειάδα",   "minutes": 40, "price": 12 }
+  },
+
+  "hours": {
+    "Mon": [],
+    "Tue": ["09:00-14:00", "17:00-21:00"],
+    "Wed": ["09:00-14:30"],
+    "Thu": ["09:00-14:00", "17:00-21:00"],
+    "Fri": ["09:00-14:00", "17:00-21:00"],
+    "Sat": ["09:00-16:00"],
+    "Sun": []
+  }
+}

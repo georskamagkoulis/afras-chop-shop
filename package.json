@@ -1,0 +1,12 @@
+{
+  "name": "afras-chop-shop",
+  "private": true,
+  "description": "Static site for Afra's Chop Shop. Pages are built from src/ + data/site.json.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
