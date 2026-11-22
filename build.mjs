@@ -6,7 +6,8 @@
 // Run it with:  npm run build   (from the repo folder)
 // It uses only Node's built-in "fs" module, so there is nothing to install.
 
-import { readFileSync, writeFileSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 // ---------------------------------------------------------------------------
 // The seven days of the week, in order. The keys (Mon, Tue, ...) are the ones
@@ -92,6 +93,21 @@ values['phone.international'] = site.phoneCountryCode + ' ' + site.phone;  // +3
 const a = site.address;
 values['address.mapsQuery'] = encodeURIComponent(a.street + ', ' + a.postalCode + ' ' + a.city);
 
+// Website address. It must end with "/" so we can stick page names after it.
+if (!site.website.url.endsWith('/')) fail('data/site.json: website.url must end with "/"');
+values['website.path'] = new URL(site.website.url).pathname;          // "/afras-chop-shop/"
+values['shareImage.url'] = site.website.url + site.shareImage.path;   // full URL of the share image
+
+// Cache busting: add a short "fingerprint" of the file's contents to the CSS/JS links,
+// e.g. css/main.css?v=3f9a1c2b. When the file changes, the fingerprint changes too,
+// so browsers download the new version instead of using an old cached copy.
+function fingerprint(path) {
+  const hash = createHash('sha256').update(readFileSync(path)).digest('hex');
+  return path + '?v=' + hash.slice(0, 8);
+}
+values['asset.css'] = fingerprint('css/main.css');
+values['asset.js'] = fingerprint('js/main.js');
+
 // 2c. Opening hours.
 //     First group the days that have exactly the same hours, e.g.
 //     Τρίτη, Πέμπτη, Παρασκευή all share "09:00-14:00, 17:00-21:00".
@@ -137,13 +153,13 @@ if (closedDays.length > 0) {
 values['hours.footer'] = footerLines.join('<br>');
 
 // The short summary used in <meta> descriptions, e.g.
-// "Τρί, Πέμ, Παρ 09:00–14:00 και 17:00–21:00 · Τετ 09:00–14:30 · Σάβ 09:00–16:00"
+// "Τρί, Πέμ, Παρ 09:00–14:00 & 17:00–21:00 · Τετ 09:00–14:30 · Σάβ 09:00–16:00"
 let summaryParts = [];
 for (const group of openGroups) {
   const dayNames = group.days.map(d => d.short).join(', ');
-  summaryParts.push(dayNames + ' ' + group.intervals.map(formatInterval).join(' και '));
+  summaryParts.push(dayNames + ' ' + group.intervals.map(formatInterval).join(' & '));
 }
-values['hours.summary'] = summaryParts.join(' · ');
+values['hours.summary'] = escapeHtml(summaryParts.join(' · '));   // & becomes &amp;
 
 // "Τρίτη με Σάββατο": from the first open day of the week to the last one.
 const openDays = DAYS.filter(d => site.hours[d.key].length > 0);
@@ -200,20 +216,40 @@ values['prices.jsonld'] = offersJson.join(',\n');
 // Step 3: fill every page in src/ and write it to the repo root.
 // ---------------------------------------------------------------------------
 const pages = readdirSync('src').filter(file => file.endsWith('.html'));
+const MENU = ['index', 'prices', 'work', 'visit'];   // the pages in the menu
 const finished = {};   // file name -> finished HTML
 let missing = [];      // placeholders that had no value
 
 for (const file of pages) {
-  const template = readFileSync('src/' + file, 'utf8');
+  let template = readFileSync('src/' + file, 'utf8');
 
-  // Replace each {{name}} with values[name]. Unknown names are collected as errors.
+  // 3a. Paste in the shared pieces: {{> footer}} is replaced by src/partials/footer.html.
+  template = template.replace(/\{\{>\s*([\w-]+)\s*\}\}\n?/g, (match, name) => {
+    const partialFile = 'src/partials/' + name + '.html';
+    if (!existsSync(partialFile)) {
+      missing.push('src/' + file + ': ' + match.trim() + ' (no file ' + partialFile + ')');
+      return '';   // already reported, so don't leave it for step 3c to report again
+    }
+    return readFileSync(partialFile, 'utf8');
+  });
+
+  // 3b. Values that are different on every page.
+  const pageValues = { ...values };   // a copy of the shared values
+  const pageName = file.replace('.html', '');
+  pageValues['page.url'] = site.website.url + (pageName === 'index' ? '' : file);
+  for (const name of MENU) {
+    // Marks the current page in the menu, e.g. <a href="prices.html" aria-current="page">
+    pageValues['nav.' + name] = (name === pageName) ? ' aria-current="page"' : '';
+  }
+
+  // 3c. Replace each {{name}} with its value. Unknown names are collected as errors.
   let html = template.replace(/\{\{(.*?)\}\}/g, (match, name) => {
     name = name.trim();
-    if (!(name in values)) {
+    if (!(name in pageValues)) {
       missing.push('src/' + file + ': ' + match);
       return match;
     }
-    return values[name];
+    return pageValues[name];
   });
 
   // A note at the top so nobody edits the generated file by mistake.

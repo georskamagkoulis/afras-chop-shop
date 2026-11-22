@@ -1,4 +1,15 @@
 {
+  "website": {
+    "url": "https://georskamagkoulis.github.io/afras-chop-shop/"
+  },
+
+  "shareImage": {
+    "path": "assets/video/hero-poster.jpg",
+    "width": 1280,
+    "height": 720,
+    "alt": "Η φωτεινή επιγραφή «Stay Fresh» στον τοίχο του κουρείου"
+  },
+
   "phone": "2231 602268",
   "phoneCountryCode": "+30",
 
