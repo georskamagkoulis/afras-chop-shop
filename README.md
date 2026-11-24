@@ -28,6 +28,30 @@ structured data, picks up the new value. Hours are written like `"09:00-14:00"`;
 - `index.html`, `prices.html`, `work.html`, `visit.html`, `404.html` in the root are **generated**.
   Don't edit them by hand; your changes would be overwritten by the next build.
 
+## "Ανοιχτά τώρα" line
+
+The home page and «Επίσκεψη» show "Ανοιχτά · κλείνει στις 14:00" or "Κλειστά · ανοίγει αύριο στις
+09:00". It is worked out in the visitor's browser (`js/main.js`, Greek time) from the hours in
+`data/site.json`, so it is always current and needs no maintenance.
+
+## Visitor statistics (optional)
+
+Off by default. To switch it on:
+
+1. Create a free account at goatcounter.com and pick a code, e.g. `afraschopshop`
+   (your stats will be at `https://afraschopshop.goatcounter.com`). Check their terms for business use.
+2. Put the code in `data/site.json`: `"analytics": { "goatcounterCode": "afraschopshop" }`.
+3. `npm run build`, commit and push.
+
+It counts page views and clicks on «Κλείσε ώρα», the phone number, the map, Setmore reviews,
+Instagram and TikTok. No cookies, so no cookie banner is needed. The privacy page updates itself
+to say so. To switch it off again, set the code back to `""`.
+
+## Privacy page
+
+`src/privacy.html`, linked from the footer. If you change what the site collects, update the text
+and the "Τελευταία ενημέρωση" date at the bottom.
+
 ## Publishing (GitHub Actions)
 
 `.github/workflows/deploy.yml` runs `npm run build` on every push to `main` and publishes only the

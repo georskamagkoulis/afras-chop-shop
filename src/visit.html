@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src {{csp.imgSrc}}; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Επίσκεψη | Afra's Chop Shop, Λαμία</title>
   <meta name="description" content="{{address.street}}, {{address.city}} ({{address.area}}). Τηλ. {{phone}}. Ωράριο: {{hours.summary}}.">
@@ -29,6 +29,7 @@
         <div class="visit">
           <div class="hours">
             <p class="label hours__notch" aria-hidden="true">Ωράριο</p>
+            <p class="open-status" data-open-status="{{hours.statusData}}"></p>
             <table class="hours__table" data-hours>
               <caption class="visually-hidden">Ωράριο λειτουργίας</caption>
               <thead class="visually-hidden">

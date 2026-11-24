@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src {{csp.imgSrc}}; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; object-src 'none'; base-uri 'self'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Απόρρητο | Afra's Chop Shop, Λαμία</title>
+  <meta name="description" content="Πώς χειρίζεται το site του Afra's Chop Shop τα δεδομένα σου: χωρίς cookies, χωρίς φόρμες, κρατήσεις μέσω Setmore.">
+{{> head}}
+  <meta property="og:title" content="Απόρρητο · Afra's Chop Shop">
+  <meta property="og:description" content="Χωρίς cookies, χωρίς φόρμες. Πώς χειρίζεται το site τα δεδομένα σου.">
+
+{{> assets}}
+</head>
+<body class="is-dark">
+{{> header}}
+
+  <main id="main" tabindex="-1">
+    <section class="page-head theme-ink" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <p class="label hero__kicker">Απόρρητο</p>
+        <h1 class="display page-head__title" id="privacy-title">Τα δεδομένα σου</h1>
+        <p class="intro">Με λίγα λόγια: αυτό το site δεν χρησιμοποιεί cookies, δεν έχει φόρμες και δεν αποθηκεύει τίποτα στη συσκευή σου.</p>
+      </div>
+    </section>
+
+    <section class="section theme-charcoal">
+      <div class="wrap legal">
+        <h2 class="label">Ποιοι είμαστε</h2>
+        <p>Afra's Chop Shop, {{address.street}}, {{address.postalCode}} {{address.city}} ({{address.area}}). Τηλέφωνο <a href="tel:{{phone.tel}}">{{phone}}</a>.</p>
+
+        <h2 class="label">Τι συλλέγει αυτό το site</h2>
+        <p>Τίποτα που να σε αναγνωρίζει. Δεν υπάρχουν φόρμες, λογαριασμοί ή cookies. Οι γραμματοσειρές και οι εικόνες φορτώνονται από το ίδιο το site, όχι από τρίτους (π.χ. Google Fonts).</p>
+
+        <h2 class="label">Μέτρηση επισκεψιμότητας</h2>
+        <p>{{privacy.analytics}}</p>
+
+        <h2 class="label">Φιλοξενία</h2>
+        <p>Το site φιλοξενείται στο GitHub Pages της GitHub, Inc. Όπως κάθε server, μπορεί να καταγράφει τη διεύθυνση IP των επισκεπτών για λόγους ασφαλείας. Δες τη <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">δήλωση απορρήτου του GitHub<span class="visually-hidden"> (ανοίγει σε νέα καρτέλα)</span></a>.</p>
+
+        <h2 class="label">Κρατήσεις</h2>
+        <p>Τα ραντεβού κλείνονται στο Setmore. Ό,τι στοιχεία δίνεις εκεί (όνομα, τηλέφωνο, email) τα διαχειρίζεται το Setmore σύμφωνα με τη δική του πολιτική απορρήτου, και τα χρησιμοποιούμε μόνο για το ραντεβού σου.</p>
+
+        <h2 class="label">Σύνδεσμοι σε άλλα site</h2>
+        <p>Όταν πατάς σύνδεσμο για Setmore, Instagram, TikTok ή Google Maps, μεταφέρεσαι στο δικό τους site και ισχύουν οι δικοί τους όροι.</p>
+
+        <h2 class="label">Ερωτήσεις</h2>
+        <p>Για οτιδήποτε σχετικό, πάρε μας τηλέφωνο στο <a href="tel:{{phone.tel}}">{{phone}}</a>.</p>
+
+        <p class="legal__updated">Τελευταία ενημέρωση: 24/11/2026</p>
+      </div>
+    </section>
+
+{{> band}}
+  </main>
+
+{{> footer}}
+</body>
+</html>

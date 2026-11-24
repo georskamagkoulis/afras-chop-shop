@@ -13,15 +13,16 @@ import { createHash } from 'node:crypto';
 // The seven days of the week, in order. The keys (Mon, Tue, ...) are the ones
 // used in site.json and in the data-day="..." attributes that js/main.js reads.
 // "schema" is the English name Google expects in the JSON-LD.
+// "on" is used in sentences like "ανοίγει την Τρίτη στις 09:00".
 // ---------------------------------------------------------------------------
 const DAYS = [
-  { key: 'Mon', name: 'Δευτέρα',   short: 'Δευ', schema: 'Monday' },
-  { key: 'Tue', name: 'Τρίτη',     short: 'Τρί', schema: 'Tuesday' },
-  { key: 'Wed', name: 'Τετάρτη',   short: 'Τετ', schema: 'Wednesday' },
-  { key: 'Thu', name: 'Πέμπτη',    short: 'Πέμ', schema: 'Thursday' },
-  { key: 'Fri', name: 'Παρασκευή', short: 'Παρ', schema: 'Friday' },
-  { key: 'Sat', name: 'Σάββατο',   short: 'Σάβ', schema: 'Saturday' },
-  { key: 'Sun', name: 'Κυριακή',   short: 'Κυρ', schema: 'Sunday' },
+  { key: 'Mon', name: 'Δευτέρα',   short: 'Δευ', on: 'τη Δευτέρα',   schema: 'Monday' },
+  { key: 'Tue', name: 'Τρίτη',     short: 'Τρί', on: 'την Τρίτη',    schema: 'Tuesday' },
+  { key: 'Wed', name: 'Τετάρτη',   short: 'Τετ', on: 'την Τετάρτη',  schema: 'Wednesday' },
+  { key: 'Thu', name: 'Πέμπτη',    short: 'Πέμ', on: 'την Πέμπτη',   schema: 'Thursday' },
+  { key: 'Fri', name: 'Παρασκευή', short: 'Παρ', on: 'την Παρασκευή', schema: 'Friday' },
+  { key: 'Sat', name: 'Σάββατο',   short: 'Σάβ', on: 'το Σάββατο',   schema: 'Saturday' },
+  { key: 'Sun', name: 'Κυριακή',   short: 'Κυρ', on: 'την Κυριακή',  schema: 'Sunday' },
 ];
 
 // Stops the build with an error message. "npm run build" then fails visibly.
@@ -58,6 +59,10 @@ for (const day of DAYS) {
   for (const interval of intervals) {
     if (!/^\d\d:\d\d-\d\d:\d\d$/.test(interval)) {
       fail('data/site.json: hours.' + day.key + ' has "' + interval + '", expected a format like "09:00-14:00"');
+    }
+    const [opens, closes] = interval.split('-');
+    if (opens >= closes) {   // "09:00" < "14:00" works as text because both have the same format
+      fail('data/site.json: hours.' + day.key + ' has "' + interval + '", the closing time must be after the opening time');
     }
   }
 }
@@ -107,6 +112,28 @@ function fingerprint(path) {
 }
 values['asset.css'] = fingerprint('css/main.css');
 values['asset.js'] = fingerprint('js/main.js');
+
+// Visitor statistics with GoatCounter (no cookies). Switched off while analytics.goatcounterCode is "".
+const gcCode = site.analytics.goatcounterCode;
+if (gcCode === '') {
+  values['analytics.meta'] = '';
+  values['csp.imgSrc'] = "'self' data:";
+  values['privacy.analytics'] = 'Αυτή τη στιγμή δεν μετράμε την επισκεψιμότητα του site.';
+} else {
+  if (!/^[a-z0-9-]+$/.test(gcCode)) {
+    fail('data/site.json: analytics.goatcounterCode "' + gcCode + '" should only have small latin letters, numbers and -');
+  }
+  const gcHost = 'https://' + gcCode + '.goatcounter.com';
+  // js/main.js finds this tag and sends the counts to the address in it.
+  values['analytics.meta'] = '\n  <meta name="goatcounter" content="' + gcHost + '/count">';
+  // The Content-Security-Policy must allow the counting requests (they are sent as tiny images).
+  values['csp.imgSrc'] = "'self' data: " + gcHost;
+  values['privacy.analytics'] =
+    'Μετράμε πόσοι επισκέπτονται το site και πόσοι πατούν «Κλείσε ώρα», το τηλέφωνο ή τους χάρτες, ' +
+    'με την υπηρεσία GoatCounter. Δεν χρησιμοποιεί cookies, δεν αποθηκεύει τίποτα στη συσκευή σου ' +
+    'και δεν κρατά τη διεύθυνση IP σου. Βλέπουμε μόνο συνολικούς αριθμούς (π.χ. ποια σελίδα, ' +
+    'από ποια χώρα, με ποιον browser), ποτέ ποιος είσαι.';
+}
 
 // 2c. Opening hours.
 //     First group the days that have exactly the same hours, e.g.
@@ -166,6 +193,16 @@ const openDays = DAYS.filter(d => site.hours[d.key].length > 0);
 const firstDay = openDays[0];
 const lastDay = openDays[openDays.length - 1];
 values['hours.openDays'] = firstDay === lastDay ? firstDay.name : firstDay.name + ' με ' + lastDay.name;
+
+// The hours for the "Ανοιχτά τώρα / Κλειστά" line. js/main.js reads this list from the
+// data-open-status="..." attribute and works out the current status in the visitor's browser.
+// Example item: { "key": "Tue", "on": "την Τρίτη", "open": [["09:00", "14:00"], ["17:00", "21:00"]] }
+const statusData = DAYS.map(day => ({
+  key: day.key,
+  on: day.on,
+  open: site.hours[day.key].map(interval => interval.split('-')),
+}));
+values['hours.statusData'] = escapeHtml(JSON.stringify(statusData));
 
 // The hours in JSON-LD (structured data for Google): one entry per group and time slot.
 let hoursJson = [];
