@@ -1415,3 +1415,33 @@ body.is-dark {
   .site-footer .logo--footer { height: 5.5rem; }
   .site-footer__grid { grid-template-columns: 1.4fr 1fr 1.5fr 1.3fr; }
 }
+
+/* ---------- 11. Open-now line, privacy page ---------- */
+/* "Ανοιχτά · κλείνει στις 14:00". Filled in by js/main.js; without JS it stays an empty line.
+   min-height keeps one line of space reserved, so nothing jumps when the text appears. */
+.open-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  min-height: calc(var(--step-0) * var(--lh-tight));
+  font-size: var(--step-0);
+  line-height: var(--lh-tight);
+  color: var(--fg-muted);
+}
+.open-status strong { color: var(--fg); }
+.open-status:not(:empty)::before {
+  content: "";
+  flex: none;
+  width: 0.625em;
+  height: 0.625em;
+  margin-top: 0.34em;   /* centres the square on the first line of text */
+  border: var(--frame-w) solid var(--fg-muted);
+}
+.open-status.is-open { color: var(--fg); }
+.open-status.is-open::before { background: var(--accent); border-color: var(--accent); }
+.hours .open-status { margin-bottom: var(--space-4); }
+
+.legal h2 { margin-top: var(--space-8); color: var(--fg); }
+.legal h2:first-child { margin-top: 0; }
+.legal p { margin-top: var(--space-3); max-width: var(--measure); }
+.legal .legal__updated { margin-top: var(--space-12); color: var(--fg-muted); font-size: var(--step--1); }

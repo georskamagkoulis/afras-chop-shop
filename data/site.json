@@ -41,6 +41,10 @@
     "combo":   { "name": "Κούρεμα + γενειάδα",   "minutes": 40, "price": 12 }
   },
 
+  "analytics": {
+    "goatcounterCode": ""
+  },
+
   "hours": {
     "Mon": [],
     "Tue": ["09:00-14:00", "17:00-21:00"],

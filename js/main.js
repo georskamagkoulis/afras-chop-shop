@@ -129,4 +129,110 @@
   document.addEventListener('mousedown',  () => clipper.classList.add('is-buzzing'));
   document.addEventListener('mouseup',    () => clipper.classList.remove('is-buzzing'));
 })();
+  /* 4. "Ανοιχτά · κλείνει στις 14:00" / "Κλειστά · ανοίγει αύριο στις 09:00".
+        The hours come from data/site.json (build.mjs puts them in data-open-status="...").
+        Uses Greek time (Europe/Athens), whatever the visitor's own time zone is. */
+  var statusEls = document.querySelectorAll('[data-open-status]');
+  if (statusEls.length && window.Intl && Intl.DateTimeFormat) {
+    try {
+      var week = JSON.parse(statusEls[0].getAttribute('data-open-status'));
+      var athens = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Europe/Athens', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+      });
+
+      // "14:30" -> 870 (minutes since midnight), so times can be compared as numbers.
+      var toMinutes = function (time) {
+        return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+      };
+
+      // Works out the sentence to show right now.
+      var statusText = function () {
+        var parts = {};
+        athens.formatToParts(new Date()).forEach(function (p) { parts[p.type] = p.value; });
+        var now = Number(parts.hour) * 60 + Number(parts.minute);
+        var todayIndex = week.map(function (d) { return d.key; }).indexOf(parts.weekday);
+        var today = week[todayIndex];
+
+        // Open right now? Then say when we close.
+        for (var i = 0; i < today.open.length; i++) {
+          if (now >= toMinutes(today.open[i][0]) && now < toMinutes(today.open[i][1])) {
+            return { open: true, word: 'Ανοιχτά', rest: 'κλείνει στις ' + today.open[i][1] };
+          }
+        }
+        // Closed: is there a later opening today (e.g. after the lunch break)?
+        for (var j = 0; j < today.open.length; j++) {
+          if (toMinutes(today.open[j][0]) > now) {
+            return { open: false, word: 'Κλειστά', rest: 'ανοίγει σήμερα στις ' + today.open[j][0] };
+          }
+        }
+        // Otherwise look at the next days, one by one.
+        for (var k = 1; k <= 7; k++) {
+          var day = week[(todayIndex + k) % 7];
+          if (day.open.length > 0) {
+            var when = (k === 1) ? 'αύριο' : day.on;
+            return { open: false, word: 'Κλειστά', rest: 'ανοίγει ' + when + ' στις ' + day.open[0][0] };
+          }
+        }
+        return null;   // closed every day: show nothing
+      };
+
+      var showStatus = function () {
+        var status = statusText();
+        Array.prototype.forEach.call(statusEls, function (el) {
+          el.textContent = '';
+          if (status) {
+            // <span><strong>Ανοιχτά</strong> · κλείνει στις 14:00</span>
+            var text = document.createElement('span');
+            var strong = document.createElement('strong');
+            strong.textContent = status.word;
+            text.appendChild(strong);
+            text.appendChild(document.createTextNode(' · ' + status.rest));
+            el.appendChild(text);
+          }
+          el.classList.toggle('is-open', !!(status && status.open));
+        });
+      };
+      showStatus();
+      setInterval(showStatus, 60 * 1000);   // keep it right if the page stays open
+    } catch (e) {
+      /* Something unexpected: leave the line empty; the full hours are on the page anyway. */
+    }
+  }
+
+  /* 5. Visitor statistics (GoatCounter, no cookies). Only runs when the page has
+        <meta name="goatcounter" content="...">, which build.mjs adds once
+        analytics.goatcounterCode is set in data/site.json. Each count is a tiny image
+        request, which the page's Content-Security-Policy allows for that address only. */
+  var counter = document.querySelector('meta[name="goatcounter"]');
+  if (counter && location.protocol === 'https:') {
+    var endpoint = counter.getAttribute('content');
+    var count = function (path, title, isEvent) {
+      var url = endpoint +
+        '?p=' + encodeURIComponent(path) +
+        '&t=' + encodeURIComponent(title) +
+        (isEvent ? '&e=true' : '&r=' + encodeURIComponent(document.referrer)) +
+        '&s=' + encodeURIComponent(screen.width + ',' + screen.height + ',' + (window.devicePixelRatio || 1)) +
+        '&rnd=' + Math.random().toString(36).slice(2);
+      new Image().src = url;
+    };
+
+    // One page view.
+    count(location.pathname, document.title, false);
+
+    // Clicks that matter to the shop, counted as named events.
+    var clickName = function (href) {
+      if (href.indexOf('tel:') === 0) return 'Κλικ: Τηλέφωνο';
+      if (href.indexOf('setmore.com/book') !== -1) return 'Κλικ: Κλείσε ώρα';
+      if (href.indexOf('setmore.com') !== -1) return 'Κλικ: Κριτικές Setmore';
+      if (href.indexOf('google.com/maps') !== -1) return 'Κλικ: Οδηγίες χάρτη';
+      if (href.indexOf('instagram.com') !== -1) return 'Κλικ: Instagram';
+      if (href.indexOf('tiktok.com') !== -1) return 'Κλικ: TikTok';
+      return null;
+    };
+    document.addEventListener('click', function (e) {
+      var link = e.target.closest && e.target.closest('a[href]');
+      var name = link && clickName(link.getAttribute('href'));
+      if (name) count(name, name, true);
+    });
+  }
 })();
