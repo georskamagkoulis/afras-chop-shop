@@ -119,3 +119,8 @@ workflow have a newer version.
 
 Change `website.url` in `data/site.json` (keep the `/` at the end) and push. Canonical links, share
 tags, structured data, `sitemap.xml`, `robots.txt` and the 404 page's paths all follow.
+
+## Demo chatbot
+
+`chatbot/` holds a demo AI assistant ("Ρώτα μας") that answers from `data/site.json`. It is separate
+from the website and is not published by the Action. See `chatbot/README.md`.
