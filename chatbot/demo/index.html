@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Ρώτα μας (demo) · Afra's Chop Shop</title>
+  <link rel="stylesheet" href="../../css/main.css">
+  <link rel="stylesheet" href="demo.css">
+  <script src="demo.js" defer></script>
+</head>
+<body class="is-dark">
+  <main class="chat-page wrap theme-ink">
+    <p class="label hero__kicker">Demo · Afra's Chop Shop</p>
+    <h1 class="display chat-page__title">Ρώτα μας</h1>
+    <p class="chat-page__note">
+      Μιλάς με <strong>ψηφιακό βοηθό (AI)</strong>. Απαντά από τα στοιχεία του μαγαζιού, αλλά μπορεί να κάνει λάθος:
+      για κάτι σίγουρο πάρε τηλέφωνο. Μη γράφεις προσωπικά στοιχεία.
+    </p>
+
+    <div class="chat" aria-live="polite" data-chat-log></div>
+
+    <div class="chat-suggestions" data-suggestions>
+      <button type="button" class="chat-chip">Είστε ανοιχτά τώρα;</button>
+      <button type="button" class="chat-chip">Πόσο κάνει το κούρεμα;</button>
+      <button type="button" class="chat-chip">Πού βρίσκεστε;</button>
+      <button type="button" class="chat-chip">Κάνετε βαφή;</button>
+    </div>
+
+    <form class="chat-form" data-chat-form>
+      <label class="visually-hidden" for="chat-input">Η ερώτησή σου</label>
+      <input id="chat-input" class="chat-form__input" name="question" maxlength="500" autocomplete="off"
+             placeholder="Γράψε την ερώτησή σου…" required>
+      <button class="btn btn--book chat-form__send" type="submit">Αποστολή</button>
+    </form>
+  </main>
+</body>
+</html>

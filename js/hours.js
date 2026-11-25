@@ -66,3 +66,7 @@ function openStatus(data, now) {
   }
   return null;
 }
+
+/* In the browser, openStatus above is already available to js/main.js. Other places that load this
+   file as a module (the chatbot in chatbot/, the tests) find it here, on the shared global object. */
+globalThis.openStatus = openStatus;

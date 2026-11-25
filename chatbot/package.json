@@ -1,0 +1,19 @@
+{
+  "name": "afras-chatbot-demo",
+  "private": true,
+  "description": "Demo chatbot for Afra's Chop Shop: answers from data/site.json with Claude. Runs on Cloudflare Workers.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "evals": "node evals/run-evals.mjs",
+    "dev": "npx wrangler dev",
+    "dev:mock": "node scripts/mock-server.mjs",
+    "deploy": "npx wrangler deploy"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

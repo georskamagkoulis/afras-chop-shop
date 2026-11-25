@@ -15,3 +15,6 @@ design-system.md
 /*.html
 /sitemap.xml
 /robots.txt
+
+# Local secrets for the chatbot (wrangler dev)
+.dev.vars

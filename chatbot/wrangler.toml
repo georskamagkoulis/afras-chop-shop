@@ -1,0 +1,12 @@
+# Cloudflare Workers settings for the chatbot (used by "npx wrangler dev" and "npx wrangler deploy").
+name = "afras-chatbot-demo"
+main = "src/worker.mjs"
+compatibility_date = "2026-11-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Websites allowed to use the chatbot, separated by commas. Add the demo page's address here.
+ALLOWED_ORIGINS = "http://localhost:8000"
+
+# The API key is NOT here: it is a secret. Locally put it in .dev.vars (ignored by git),
+# on Cloudflare set it with:  npx wrangler secret put ANTHROPIC_API_KEY
