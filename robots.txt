@@ -1,3 +1,0 @@
-User-agent: *
-Allow: /
-# TODO: add "Sitemap: <final domain>/sitemap.xml" once the domain is known

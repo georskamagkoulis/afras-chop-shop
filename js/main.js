@@ -129,55 +129,48 @@
   document.addEventListener('mousedown',  () => clipper.classList.add('is-buzzing'));
   document.addEventListener('mouseup',    () => clipper.classList.remove('is-buzzing'));
 })();
-  /* 4. "Ανοιχτά · κλείνει στις 14:00" / "Κλειστά · ανοίγει αύριο στις 09:00".
+  /* 4. "Ανοιχτά · κλείνει στις 14:00" / "Κλειστά · ανοίγει αύριο στις 09:00", and the holiday notice.
         The hours come from data/site.json (build.mjs puts them in data-open-status="...").
+        The calculation itself is in js/hours.js (openStatus), so the tests can check it.
         Uses Greek time (Europe/Athens), whatever the visitor's own time zone is. */
   var statusEls = document.querySelectorAll('[data-open-status]');
-  if (statusEls.length && window.Intl && Intl.DateTimeFormat) {
+  var notice = document.querySelector('[data-notice]');
+  if ((statusEls.length || notice) && window.Intl && Intl.DateTimeFormat) {
     try {
-      var week = JSON.parse(statusEls[0].getAttribute('data-open-status'));
       var athens = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Europe/Athens', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+        timeZone: 'Europe/Athens', year: 'numeric', month: '2-digit', day: '2-digit',
+        weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
       });
+      var weekKeys = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-      // "14:30" -> 870 (minutes since midnight), so times can be compared as numbers.
-      var toMinutes = function (time) {
-        return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
-      };
-
-      // Works out the sentence to show right now.
-      var statusText = function () {
+      // The current moment in Greece: { date: "2026-11-24", dayIndex: 1, minutes: 600 }
+      var athensNow = function () {
         var parts = {};
         athens.formatToParts(new Date()).forEach(function (p) { parts[p.type] = p.value; });
-        var now = Number(parts.hour) * 60 + Number(parts.minute);
-        var todayIndex = week.map(function (d) { return d.key; }).indexOf(parts.weekday);
-        var today = week[todayIndex];
-
-        // Open right now? Then say when we close.
-        for (var i = 0; i < today.open.length; i++) {
-          if (now >= toMinutes(today.open[i][0]) && now < toMinutes(today.open[i][1])) {
-            return { open: true, word: 'Ανοιχτά', rest: 'κλείνει στις ' + today.open[i][1] };
-          }
-        }
-        // Closed: is there a later opening today (e.g. after the lunch break)?
-        for (var j = 0; j < today.open.length; j++) {
-          if (toMinutes(today.open[j][0]) > now) {
-            return { open: false, word: 'Κλειστά', rest: 'ανοίγει σήμερα στις ' + today.open[j][0] };
-          }
-        }
-        // Otherwise look at the next days, one by one.
-        for (var k = 1; k <= 7; k++) {
-          var day = week[(todayIndex + k) % 7];
-          if (day.open.length > 0) {
-            var when = (k === 1) ? 'αύριο' : day.on;
-            return { open: false, word: 'Κλειστά', rest: 'ανοίγει ' + when + ' στις ' + day.open[0][0] };
-          }
-        }
-        return null;   // closed every day: show nothing
+        return {
+          date: parts.year + '-' + parts.month + '-' + parts.day,
+          dayIndex: weekKeys.indexOf(parts.weekday),
+          minutes: Number(parts.hour) * 60 + Number(parts.minute)
+        };
       };
 
-      var showStatus = function () {
-        var status = statusText();
+      // The notice lines have data-until="2026-12-26": hide the ones that have passed,
+      // and the whole strip when none is left (the next build removes them for good).
+      var updateNotice = function (now) {
+        if (!notice) return;
+        Array.prototype.forEach.call(notice.querySelectorAll('[data-until]'), function (item) {
+          if (item.getAttribute('data-until') < now.date) item.remove();
+        });
+        if (!notice.querySelector('[data-until]')) { notice.remove(); notice = null; }
+      };
+
+      var data = statusEls.length ? JSON.parse(statusEls[0].getAttribute('data-open-status')) : null;
+
+      var update = function () {
+        var now = athensNow();
+        updateNotice(now);
+        if (!data) return;
+        var status = openStatus(data, now);   // from js/hours.js
         Array.prototype.forEach.call(statusEls, function (el) {
           el.textContent = '';
           if (status) {
@@ -192,10 +185,10 @@
           el.classList.toggle('is-open', !!(status && status.open));
         });
       };
-      showStatus();
-      setInterval(showStatus, 60 * 1000);   // keep it right if the page stays open
+      update();
+      setInterval(update, 60 * 1000);   // keep it right if the page stays open
     } catch (e) {
-      /* Something unexpected: leave the line empty; the full hours are on the page anyway. */
+      /* Something unexpected: leave things as they are; the full hours are on the page anyway. */
     }
   }
 
