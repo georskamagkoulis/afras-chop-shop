@@ -138,3 +138,15 @@ test('bad conversations are refused before reaching the AI', async () => {
   }
   assert.equal(checkMessages([{ role: 'user', content: 'Πόσο κάνει το κούρεμα;' }]), null);
 });
+
+test('the mock client (no AI) answers from site.json through the real handler', async () => {
+  const { createMockClient } = await import('../src/mock-client.mjs');
+  const client = createMockClient(site);
+  const askMock = async q => (await handleRequest(chatRequest(ask(q)), env, { client, site, date: TUESDAY_10AM })).json();
+  assert.deepEqual(await askMock('Πόσο κάνει το κούρεμα;'),
+    { answer: '[Χωρίς AI] Κούρεμα: 9 € (περίπου 30 λεπτά).', action: 'book', link: site.links.booking });
+  assert.match((await askMock('Είστε ανοιχτά;')).answer, /Ανοιχτά · κλείνει στις 14:00/);
+  assert.match((await askMock('Κούρεμα με γένια πόσο;')).answer, /12 €/);
+  assert.equal((await askMock('Πού βρίσκεστε;')).action, 'map');
+  assert.equal((await askMock('Κάνετε βαφή;')).action, 'call');
+});

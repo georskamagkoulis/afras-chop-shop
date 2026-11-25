@@ -7,6 +7,7 @@
     "test": "node --test test/*.test.mjs",
     "evals": "node evals/run-evals.mjs",
     "dev": "npx wrangler dev",
+    "dev:mock": "node scripts/mock-server.mjs",
     "deploy": "npx wrangler deploy"
   },
   "dependencies": {

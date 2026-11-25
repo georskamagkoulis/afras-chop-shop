@@ -19,6 +19,7 @@ demo page (browser) ──POST /chat──▶ worker (Cloudflare) ──▶ Clau
 | `src/chat.mjs` | Sends the conversation to Claude and reads the answer as JSON: `{ answer, action }` |
 | `src/handler.mjs` | The `/chat` endpoint: allowed websites only, at most 10 messages of 500 characters, errors become "call us" |
 | `src/worker.mjs` | Entry point on Cloudflare Workers |
+| `src/mock-client.mjs`, `scripts/mock-server.mjs` | Mock mode: the demo without an API key (`npm run dev:mock`) |
 | `demo/` | The chat page (`index.html`, `demo.js`, `demo.css`) |
 | `test/` | Tests with a **fake** Claude: no key, no cost (`npm test`) |
 | `evals/` | Questions for the **real** Claude and what the answers must contain (`npm run evals`) |
@@ -35,6 +36,17 @@ demo page (browser) ──POST /chat──▶ worker (Cloudflare) ──▶ Clau
   because anyone could call the worker directly.
 - **The visitor is told it is an AI** (required by the EU AI Act) and not to share personal data.
 - Answers are shown as plain text, never as HTML.
+
+## Trying it without an API key (mock mode, free)
+
+1. `cd chatbot`, then `npm install` (once).
+2. Terminal 1, in `chatbot/`: `npm run dev:mock`
+3. Terminal 2, in the repo root: `python3 -m http.server 8000` (on Windows without Python: `npx http-server -p 8000`)
+4. Open http://localhost:8000/chatbot/demo/
+
+The answers come from simple keyword rules over `site.json`, not from AI, and start with
+"[Χωρίς AI]". Everything else is the real code: the same request checks, the same facts and the
+same "Ανοιχτά / Κλειστά". Good for showing the page and working on its design for free.
 
 ## Setting it up (one time)
 
