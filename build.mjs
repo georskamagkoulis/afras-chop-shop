@@ -1,71 +1,92 @@
 // build.mjs: builds the finished website pages.
 //
-// It reads data/site.json, fills every {{placeholder}} in src/*.html with a value,
-// and writes the finished pages to the repo root, where GitHub Pages serves them.
+// It reads data/site.json, fills every {{placeholder}} in src/*.html (and src/robots.txt)
+// with a value, and writes the finished files to the repo root. The GitHub Action
+// (.github/workflows/deploy.yml) runs this and publishes the result on GitHub Pages.
 //
 // Run it with:  npm run build   (from the repo folder)
-// It uses only Node's built-in "fs" module, so there is nothing to install.
+// It only uses Node's built-in modules, so there is nothing to install.
+//
+// Three optional settings, used by the tests (you normally don't need them):
+//   SITE_DATA=other.json   read this data file instead of data/site.json
+//   BUILD_TODAY=2026-12-20 pretend today is this date (decides which holidays are shown)
+//   OUT_DIR=some/folder    write the finished files there instead of the repo root
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import {
+  DAYS, escapeHtml, formatInterval, checkInterval, normalizeDate, addDays, athensToday,
+  formatDateRange, parseCsv, closuresFromSheetRows,
+} from './build-helpers.mjs';
 
-// ---------------------------------------------------------------------------
-// The seven days of the week, in order. The keys (Mon, Tue, ...) are the ones
-// used in site.json and in the data-day="..." attributes that js/main.js reads.
-// "schema" is the English name Google expects in the JSON-LD.
-// "on" is used in sentences like "ανοίγει την Τρίτη στις 09:00".
-// ---------------------------------------------------------------------------
-const DAYS = [
-  { key: 'Mon', name: 'Δευτέρα',   short: 'Δευ', on: 'τη Δευτέρα',   schema: 'Monday' },
-  { key: 'Tue', name: 'Τρίτη',     short: 'Τρί', on: 'την Τρίτη',    schema: 'Tuesday' },
-  { key: 'Wed', name: 'Τετάρτη',   short: 'Τετ', on: 'την Τετάρτη',  schema: 'Wednesday' },
-  { key: 'Thu', name: 'Πέμπτη',    short: 'Πέμ', on: 'την Πέμπτη',   schema: 'Thursday' },
-  { key: 'Fri', name: 'Παρασκευή', short: 'Παρ', on: 'την Παρασκευή', schema: 'Friday' },
-  { key: 'Sat', name: 'Σάββατο',   short: 'Σάβ', on: 'το Σάββατο',   schema: 'Saturday' },
-  { key: 'Sun', name: 'Κυριακή',   short: 'Κυρ', on: 'την Κυριακή',  schema: 'Sunday' },
-];
+const DATA_FILE = process.env.SITE_DATA || 'data/site.json';
+const TODAY = process.env.BUILD_TODAY || athensToday();
+const OUT_DIR = (process.env.OUT_DIR || '.') + '/';
+const NOTICE_DAYS_BEFORE = 21;   // a holiday notice appears this many days before it starts
 
-// Stops the build with an error message. "npm run build" then fails visibly.
+// Stops the build with an error message. "npm run build" then fails visibly,
+// and in the GitHub Action nothing is published, so the live site stays as it was.
 function fail(message) {
   console.error('BUILD FAILED: ' + message);
   process.exit(1);
 }
 
-// Makes text safe to put inside HTML (for example inside content="...").
-function escapeHtml(text) {
-  return String(text)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-}
-
-// Turns "09:00-14:00" into "09:00–14:00" (with a proper en dash).
-function formatInterval(interval) {
-  return interval.replace('-', '–');
-}
-
 // ---------------------------------------------------------------------------
 // Step 1: read and check the data file.
 // ---------------------------------------------------------------------------
-const site = JSON.parse(readFileSync('data/site.json', 'utf8'));
+let site;
+try {
+  site = JSON.parse(readFileSync(DATA_FILE, 'utf8'));
+} catch (error) {
+  fail(DATA_FILE + ' could not be read: ' + error.message + ' (a missing comma or quote?)');
+}
 
-// Every day must exist in "hours", and every interval must look like "09:00-14:00".
+// Every day must exist in "hours", and every time slot must look like "09:00-14:00".
 for (const day of DAYS) {
   const intervals = site.hours[day.key];
   if (!Array.isArray(intervals)) {
-    fail('data/site.json: hours.' + day.key + ' is missing (use [] for a closed day)');
+    fail(DATA_FILE + ': hours.' + day.key + ' is missing (use [] for a closed day)');
   }
   for (const interval of intervals) {
-    if (!/^\d\d:\d\d-\d\d:\d\d$/.test(interval)) {
-      fail('data/site.json: hours.' + day.key + ' has "' + interval + '", expected a format like "09:00-14:00"');
-    }
-    const [opens, closes] = interval.split('-');
-    if (opens >= closes) {   // "09:00" < "14:00" works as text because both have the same format
-      fail('data/site.json: hours.' + day.key + ' has "' + interval + '", the closing time must be after the opening time');
-    }
+    const problem = checkInterval(interval);
+    if (problem) fail(DATA_FILE + ': hours.' + day.key + ': ' + problem);
   }
 }
+
+// Holidays and special hours ("closures"): from site.json, plus the Google Sheet if one is set.
+let closures = (site.closures || []).map(c => ({ ...c, source: DATA_FILE }));
+const sheetUrl = site.closuresSheetCsv || '';
+if (sheetUrl !== '') {
+  let csv;
+  try {
+    const response = await fetch(sheetUrl);
+    if (!response.ok) throw new Error('the server answered ' + response.status);
+    csv = await response.text();
+  } catch (error) {
+    fail('the holidays sheet could not be downloaded (' + error.message + '): ' + sheetUrl);
+  }
+  const fromSheet = closuresFromSheetRows(parseCsv(csv)).map(c => ({ ...c, source: 'the holidays sheet' }));
+  closures = closures.concat(fromSheet);
+}
+
+// Check every closure and bring it to one shape: { from, to, note, open: [["09:00","14:00"], ...] }
+closures = closures.map((c, i) => {
+  const where = c.source + ', holiday ' + (i + 1) + ' ("' + (c.note || '') + '")';
+  const from = normalizeDate(c.from);
+  const to = normalizeDate(c.to || c.from);
+  if (!from) fail(where + ': "' + c.from + '" is not a date like 2026-12-24 or 24/12/2026');
+  if (!to) fail(where + ': "' + c.to + '" is not a date like 2026-12-24 or 24/12/2026');
+  if (from > to) fail(where + ': it ends (' + to + ') before it starts (' + from + ')');
+  const hours = c.hours || [];
+  for (const interval of hours) {
+    const problem = checkInterval(interval);
+    if (problem) fail(where + ': ' + problem);
+  }
+  return { from, to, note: c.note || '', open: hours.map(h => h.split('-')) };
+});
+
+// Only holidays that have not ended yet matter. Sorted by start date.
+closures = closures.filter(c => c.to >= TODAY).sort((a, b) => (a.from < b.from ? -1 : 1));
 
 // ---------------------------------------------------------------------------
 // Step 2: build the "values" table: placeholder name -> text to put in the page.
@@ -75,7 +96,7 @@ const values = {};
 // 2a. Every simple value in site.json becomes a placeholder automatically.
 //     For example site.rating.count becomes {{rating.count}}, and
 //     site.prices.haircut.price becomes {{prices.haircut.price}}.
-//     Lists (like the hours) are skipped here; they are handled in 2c.
+//     Lists (like the hours) are skipped here; they are handled further down.
 function addSimpleValues(prefix, object) {
   for (const key of Object.keys(object)) {
     const name = prefix === '' ? key : prefix + '.' + key;
@@ -99,7 +120,7 @@ const a = site.address;
 values['address.mapsQuery'] = encodeURIComponent(a.street + ', ' + a.postalCode + ' ' + a.city);
 
 // Website address. It must end with "/" so we can stick page names after it.
-if (!site.website.url.endsWith('/')) fail('data/site.json: website.url must end with "/"');
+if (!site.website.url.endsWith('/')) fail(DATA_FILE + ': website.url must end with "/"');
 values['website.path'] = new URL(site.website.url).pathname;          // "/afras-chop-shop/"
 values['shareImage.url'] = site.website.url + site.shareImage.path;   // full URL of the share image
 
@@ -112,6 +133,7 @@ function fingerprint(path) {
 }
 values['asset.css'] = fingerprint('css/main.css');
 values['asset.js'] = fingerprint('js/main.js');
+values['asset.hoursJs'] = fingerprint('js/hours.js');
 
 // Visitor statistics with GoatCounter (no cookies). Switched off while analytics.goatcounterCode is "".
 const gcCode = site.analytics.goatcounterCode;
@@ -121,7 +143,7 @@ if (gcCode === '') {
   values['privacy.analytics'] = 'Αυτή τη στιγμή δεν μετράμε την επισκεψιμότητα του site.';
 } else {
   if (!/^[a-z0-9-]+$/.test(gcCode)) {
-    fail('data/site.json: analytics.goatcounterCode "' + gcCode + '" should only have small latin letters, numbers and -');
+    fail(DATA_FILE + ': analytics.goatcounterCode "' + gcCode + '" should only have small latin letters, numbers and -');
   }
   const gcHost = 'https://' + gcCode + '.goatcounter.com';
   // js/main.js finds this tag and sends the counts to the address in it.
@@ -153,7 +175,7 @@ for (const day of DAYS) {
     openGroups.push({ days: [day], intervals: intervals });
   }
 }
-if (openGroups.length === 0) fail('data/site.json: the shop is closed every day');
+if (openGroups.length === 0) fail(DATA_FILE + ': the shop is closed every day');
 
 // The table on visit.html: one <tr> per day.
 let tableRows = [];
@@ -194,14 +216,18 @@ const firstDay = openDays[0];
 const lastDay = openDays[openDays.length - 1];
 values['hours.openDays'] = firstDay === lastDay ? firstDay.name : firstDay.name + ' με ' + lastDay.name;
 
-// The hours for the "Ανοιχτά τώρα / Κλειστά" line. js/main.js reads this list from the
+// The hours for the "Ανοιχτά / Κλειστά" line. js/hours.js reads this from the
 // data-open-status="..." attribute and works out the current status in the visitor's browser.
-// Example item: { "key": "Tue", "on": "την Τρίτη", "open": [["09:00", "14:00"], ["17:00", "21:00"]] }
-const statusData = DAYS.map(day => ({
-  key: day.key,
-  on: day.on,
-  open: site.hours[day.key].map(interval => interval.split('-')),
-}));
+// Example: { "week": [{ "key": "Tue", "on": "την Τρίτη", "open": [["09:00", "14:00"]] }, ...],
+//            "closures": [{ "from": "2026-12-24", "to": "2026-12-26", "open": [] }] }
+const statusData = {
+  week: DAYS.map(day => ({
+    key: day.key,
+    on: day.on,
+    open: site.hours[day.key].map(interval => interval.split('-')),
+  })),
+  closures: closures.map(c => ({ from: c.from, to: c.to, open: c.open })),
+};
 values['hours.statusData'] = escapeHtml(JSON.stringify(statusData));
 
 // The hours in JSON-LD (structured data for Google): one entry per group and time slot.
@@ -216,7 +242,47 @@ for (const group of openGroups) {
 }
 values['hours.jsonld'] = hoursJson.join(',\n');
 
-// 2d. Prices.
+// 2d. Holidays and special hours.
+// The notice strip at the top of every page. Shows holidays that are on now, or start within
+// NOTICE_DAYS_BEFORE days. Each line has data-until="...", so js/main.js can hide it the
+// moment it has passed, even before the next build.
+const noticeLimit = addDays(TODAY, NOTICE_DAYS_BEFORE);
+const noticeItems = [];
+for (const c of closures.filter(c => c.from <= noticeLimit)) {
+  const dates = formatDateRange(c.from, c.to);
+  const note = c.note === '' ? '' : ' (' + escapeHtml(c.note) + ')';
+  let text;
+  if (c.open.length === 0) {
+    text = '<strong>Κλειστά</strong> ' + dates + note;
+  } else {
+    const hours = c.open.map(pair => pair.join('–')).join(', ');
+    text = '<strong>' + dates + '</strong> ανοιχτά ' + hours + note;
+  }
+  noticeItems.push('<li data-until="' + c.to + '">' + text + '</li>');
+}
+// The value starts with a line break because the placeholder sits at the end of a line
+// in src/partials/header.html; with no holidays it is empty and leaves no trace.
+values['notice.html'] = noticeItems.length === 0 ? '' :
+  '\n\n  <div class="notice theme-red" role="region" aria-label="Έκτακτες αλλαγές ωραρίου" data-notice>\n' +
+  '    <ul role="list" class="wrap notice__list">\n' +
+  noticeItems.map(item => '      ' + item).join('\n') + '\n' +
+  '    </ul>\n' +
+  '  </div>';
+
+// Holidays in JSON-LD, so Google can show "Closed" on those days.
+// A day that is closed all day is written as opens "00:00", closes "00:00".
+let specialJson = [];
+for (const c of closures) {
+  const slots = c.open.length === 0 ? [['00:00', '00:00']] : c.open;
+  for (const [opens, closes] of slots) {
+    specialJson.push('      { "@type": "OpeningHoursSpecification", "validFrom": "' + c.from + '", '
+      + '"validThrough": "' + c.to + '", "opens": "' + opens + '", "closes": "' + closes + '" }');
+  }
+}
+values['hours.specialJsonld'] = specialJson.length === 0 ? '' :
+  '    "specialOpeningHoursSpecification": [\n' + specialJson.join(',\n') + '\n    ],\n';
+
+// 2e. Prices.
 let lowest = Infinity;
 let highest = -Infinity;
 let boardRows = [];
@@ -224,7 +290,7 @@ let offersJson = [];
 for (const id of Object.keys(site.prices)) {
   const item = site.prices[id];
   if (typeof item.price !== 'number' || typeof item.minutes !== 'number') {
-    fail('data/site.json: prices.' + id + ' needs a numeric "price" and "minutes"');
+    fail(DATA_FILE + ': prices.' + id + ' needs a numeric "price" and "minutes"');
   }
   lowest = Math.min(lowest, item.price);
   highest = Math.max(highest, item.price);
@@ -250,11 +316,11 @@ values['prices.board'] = boardRows.join('\n');
 values['prices.jsonld'] = offersJson.join(',\n');
 
 // ---------------------------------------------------------------------------
-// Step 3: fill every page in src/ and write it to the repo root.
+// Step 3: fill every page in src/ and keep the results in memory.
 // ---------------------------------------------------------------------------
-const pages = readdirSync('src').filter(file => file.endsWith('.html'));
+const pages = readdirSync('src').filter(file => file.endsWith('.html') || file.endsWith('.txt'));
 const MENU = ['index', 'prices', 'work', 'visit'];   // the pages in the menu
-const finished = {};   // file name -> finished HTML
+const finished = {};   // file name -> finished text
 let missing = [];      // placeholders that had no value
 
 for (const file of pages) {
@@ -296,11 +362,24 @@ for (const file of pages) {
   finished[file] = html;
 }
 
-// Stop BEFORE writing anything, so a broken build never overwrites the live pages.
+// 3d. sitemap.xml: the list of pages for Google (Search Console). The 404 page is left out.
+const sitemapPages = pages.filter(file => file.endsWith('.html') && file !== '404.html');
+finished['sitemap.xml'] =
+  '<?xml version="1.0" encoding="UTF-8"?>\n' +
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+  sitemapPages.map(file => '  <url><loc>' + site.website.url + (file === 'index.html' ? '' : file) + '</loc></url>').join('\n') +
+  '\n</urlset>\n';
+
+// ---------------------------------------------------------------------------
+// Step 4: write everything, but only if there were no errors,
+// so a broken build never overwrites the finished pages.
+// ---------------------------------------------------------------------------
 if (missing.length > 0) {
   fail('these placeholders have no value:\n  ' + missing.join('\n  '));
 }
-for (const file of pages) {
-  writeFileSync(file, finished[file]);
+mkdirSync(OUT_DIR, { recursive: true });
+for (const file of Object.keys(finished)) {
+  writeFileSync(OUT_DIR + file, finished[file]);
 }
-console.log('Built ' + pages.length + ' pages: ' + pages.join(', '));
+console.log('Built ' + Object.keys(finished).join(', ') +
+  (closures.length ? ' (' + closures.length + ' upcoming holiday(s), ' + noticeItems.length + ' in the notice)' : ''));

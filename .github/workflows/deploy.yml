@@ -1,6 +1,6 @@
-# Builds the site with "npm run build" and publishes it to GitHub Pages.
-# Only the public files are published (pages, css, js, assets, robots.txt),
-# so src/, data/ and build.mjs are not reachable on the live site.
+# Tests the site, builds it with "npm run build" and publishes it to GitHub Pages.
+# Only the public files are published (pages, css, js, assets, sitemap, robots, manifest),
+# so src/, data/, tests/ and the build scripts are not reachable on the live site.
 #
 # One-time setup: repo Settings → Pages → Build and deployment → Source: "GitHub Actions".
 
@@ -9,8 +9,13 @@ name: Build and deploy
 on:
   push:
     branches: [main]
-  pull_request:          # on PRs: build only (catches a broken build before merging)
+  pull_request:          # on PRs: test and build only (catches mistakes before merging)
   workflow_dispatch:     # "Run workflow" button in the Actions tab
+  schedule:
+    # Every hour (at minute 17): picks up holidays added to the Google Sheet, and removes
+    # holidays that have ended. GitHub may run it a few minutes late; that is fine here.
+    # Note: GitHub pauses scheduled runs if the repo has no activity for 60 days (it emails you).
+    - cron: '17 * * * *'
 
 concurrency:
   group: pages
@@ -28,20 +33,16 @@ jobs:
         with:
           node-version: 22
 
+      - name: Run the tests
+        run: npm test
+
       - name: Build pages from src/ and data/site.json
         run: npm run build
-
-      - name: Check the committed pages are up to date
-        run: |
-          if ! git diff --quiet -- '*.html'; then
-            echo "::warning::The committed pages differ from a fresh build. Run 'npm run build' and commit the result."
-            git diff --stat -- '*.html'
-          fi
 
       - name: Collect the public files
         run: |
           mkdir _site
-          cp *.html robots.txt _site/
+          cp *.html sitemap.xml robots.txt manifest.webmanifest _site/
           cp -r css js assets _site/
 
       - uses: actions/upload-pages-artifact@v3

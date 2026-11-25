@@ -4,7 +4,8 @@
   "description": "Static site for Afra's Chop Shop. Pages are built from src/ + data/site.json.",
   "type": "module",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "node --test tests/*.test.mjs"
   },
   "engines": {
     "node": ">=18"

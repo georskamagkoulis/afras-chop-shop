@@ -1,0 +1,9 @@
+# Dependabot checks once a month whether the GitHub Actions used in .github/workflows/
+# (actions/checkout, actions/deploy-pages, ...) have newer versions, and opens a pull request
+# to update them. The tests run on that pull request; if they pass, you can merge it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
